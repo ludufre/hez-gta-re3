@@ -1727,6 +1727,7 @@ void FlushLog()
 #endif
 }
 
+#ifdef USE_ADVANCED_SCRIPT_DEBUG_OUTPUT
 int32* GetPointerToScriptVariableForDebug(CRunningScript* pScript, uint32* pIp, char* buf)
 {
 	char tmpstr[24];
@@ -1951,6 +1952,7 @@ void CRunningScript::LogAfterProcessingCommand(int32 command)
 		}
 	}
 }
+#endif // USE_ADVANCED_SCRIPT_DEBUG_OUTPUT
 
 #ifdef MISSION_SWITCHER
 void
