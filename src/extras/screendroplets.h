@@ -31,6 +31,7 @@ public:
 	};
 
 	static int ms_initialised;
+	static bool HasDrops(void);
 	static RwTexture *ms_maskTex;
 	static RwTexture *ms_screenTex;
 

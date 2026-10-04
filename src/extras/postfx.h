@@ -48,6 +48,7 @@ public:
 	static bool NeedBackBuffer(void);
 	static bool NeedFrontBuffer(int32 type);
 	static void GetBackBuffer(RwCamera *cam);
+	static bool GotBackBufferThisFrame(void);
 	static bool UseBlurColours(void) { return EffectSwitch != POSTFX_SIMPLE; }
 };
 

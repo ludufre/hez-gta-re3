@@ -300,6 +300,15 @@ ScreenDroplets::AddToRenderList(ScreenDroplets::ScreenDrop *drop)
 	indices[5] = first + 0;
 }
 
+bool
+ScreenDroplets::HasDrops(void)
+{
+	for(ScreenDrop *drop = &ms_drops[0]; drop < &ms_drops[MAXDROPS]; drop++)
+		if(drop->active)
+			return true;
+	return false;
+}
+
 void
 ScreenDroplets::Clear(void)
 {

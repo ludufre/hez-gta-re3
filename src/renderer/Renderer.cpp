@@ -1970,7 +1970,21 @@ CRenderer::GenerateEnvironmentMap(void)
 	// re-using all sorts of stuff here...
 
 	CPostFX::GetBackBuffer(Scene.camera);
+	RenderEnvironmentMap();
 
+	RwCameraBeginUpdate(Scene.camera);
+
+	if(gbRenderDebugEnvMap){
+		RwRenderStateSet(rwRENDERSTATETEXTURERASTER, RwTextureGetRaster(CustomPipes::EnvMapTex));
+		RwIm2DRenderIndexedPrimitive(rwPRIMTYPETRILIST, CustomPipes::EnvScreenQuad, 4, (RwImVertexIndex*)CustomPipes::QuadIndices, 6);
+	}
+}
+
+// Draws the env map from the scene copy in CPostFX::pBackBuffer. Called outside
+// the main camera's update so it doesn't split the frame on tiled GPUs.
+void
+CRenderer::RenderEnvironmentMap(void)
+{
 	RwCameraBeginUpdate(CustomPipes::EnvMapCam);
 
 	// get current scene
@@ -1989,12 +2003,4 @@ CRenderer::GenerateEnvironmentMap(void)
 		DrawEnvMapCoronas(TheCamera.GetForward().Heading());
 
 	RwCameraEndUpdate(CustomPipes::EnvMapCam);
-
-
-	RwCameraBeginUpdate(Scene.camera);
-
-	if(gbRenderDebugEnvMap){
-		RwRenderStateSet(rwRENDERSTATETEXTURERASTER, RwTextureGetRaster(CustomPipes::EnvMapTex));
-		RwIm2DRenderIndexedPrimitive(rwPRIMTYPETRILIST, CustomPipes::EnvScreenQuad, 4, (RwImVertexIndex*)CustomPipes::QuadIndices, 6);
-	}
 }

@@ -148,6 +148,10 @@ bool gbPrintMemoryUsage;
 
 #ifdef NEW_RENDERER
 bool gbNewRenderer = true;
+// Set once Idle has a copy of the scene for the env map. Drawing the env map
+// mid-frame forced tiled GPUs (Raspberry Pi V3D) to store and reload the whole
+// frame; between the end of the frame and present it costs almost nothing.
+static bool bEnvMapPending;
 #endif
 #ifdef FIX_BUGS
 // need to clear stencil for mblur fx. no idea why it works in the original game
@@ -374,6 +378,12 @@ DoRWStuffEndOfFrame(void)
 	CDebug::DebugDisplayTextBuffer();
 	FlushObrsPrintfs();
 	RwCameraEndUpdate(Scene.camera);
+#ifdef NEW_RENDERER
+	if(bEnvMapPending){
+		bEnvMapPending = false;
+		CRenderer::RenderEnvironmentMap();
+	}
+#endif
 	RsCameraShowRaster(Scene.camera);
 #ifndef MASTER
 	char s[48];
@@ -1297,7 +1307,7 @@ RenderEffects_new(void)
 	PUSH_RENDERGROUP("RenderEffects_new");
 	// stupid to do this before the whole world is drawn!
 //	CShadows::RenderStaticShadows();
-	CRenderer::GenerateEnvironmentMap();
+	// the env map is drawn at the end of the frame now, see bEnvMapPending
 //	CShadows::RenderStoredShadows();
 //	CSkidmarks::Render();
 //	CRubbish::Render();
@@ -1853,14 +1863,25 @@ Idle(void *arg)
 		        TheCamera.SetMotionBlurAlpha(150);
 
 #ifdef SCREEN_DROPLETS
-		CPostFX::GetBackBuffer(Scene.camera);
 		ScreenDroplets::Process();
-		ScreenDroplets::Render();
+		if(ScreenDroplets::HasDrops()){
+			CPostFX::GetBackBuffer(Scene.camera);
+			ScreenDroplets::Render();
+		}
 #endif
 
 		tbStartTimer(0, "RenderMotionBlur");
 		TheCamera.RenderMotionBlur();
 		tbEndTimer("RenderMotionBlur");
+
+#ifdef NEW_RENDERER
+		// the env map takes the scene before the hud goes on
+		if(gbNewRenderer){
+			if(!CPostFX::GotBackBufferThisFrame())
+				CPostFX::GetBackBuffer(Scene.camera);
+			bEnvMapPending = true;
+		}
+#endif
 
 		tbStartTimer(0, "Render2dStuff");
 		Render2dStuff();

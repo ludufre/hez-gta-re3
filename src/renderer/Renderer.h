@@ -93,4 +93,5 @@ public:
 	static void AddVisibleEntity(CEntity *ent);
 
 	static void GenerateEnvironmentMap(void);
+	static void RenderEnvironmentMap(void);
 };

@@ -12,6 +12,7 @@
 #include "Camera.h"
 #include "MBlur.h"
 #include "postfx.h"
+#include "Timer.h"
 
 RwRaster *CPostFX::pFrontBuffer;
 RwRaster *CPostFX::pBackBuffer;
@@ -401,9 +402,20 @@ CPostFX::NeedFrontBuffer(int32 type)
 	return false;
 }
 
+static uint32 backBufferFrame = ~0u;
+
+// The env map reuses whatever copy of the scene was taken this frame instead of
+// grabbing its own, since every grab splits the frame on tiled GPUs.
+bool
+CPostFX::GotBackBufferThisFrame(void)
+{
+	return backBufferFrame == CTimer::GetFrameCounter();
+}
+
 void
 CPostFX::GetBackBuffer(RwCamera *cam)
 {
+	backBufferFrame = CTimer::GetFrameCounter();
 	RwRasterPushContext(pBackBuffer);
 	RwRasterRenderFast(RwCameraGetRaster(cam), 0, 0);
 	RwRasterPopContext();
