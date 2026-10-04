@@ -421,6 +421,11 @@ DestroyVehiclePipe(void)
 
 rw::gl3::Shader *leedsWorldShader;
 rw::gl3::Shader *leedsWorldShader_mobile;
+// Same shaders without the alpha test discard, for meshes that are fully
+// opaque. A shader that can discard turns off early depth testing on tiled
+// GPUs like the Raspberry Pi's V3D, so every hidden building pixel got shaded.
+rw::gl3::Shader *leedsWorldShader_noAT;
+rw::gl3::Shader *leedsWorldShader_mobile_noAT;
 
 static void
 worldRenderCB(rw::Atomic *atomic, rw::gl3::InstanceDataHeader *header)
@@ -490,10 +495,15 @@ CreateWorldPipe(void)
 	const char *vs[] = { shaderDecl, header_vert_src, leedsBuilding_vert_src, nil };
 	const char *vs_mobile[] = { shaderDecl, header_vert_src, leedsBuilding_mobile_vert_src, nil };
 	const char *fs[] = { shaderDecl, header_frag_src, scale_frag_src, nil };
+	const char *fs_noAT[] = { shaderDecl, "#define NO_ALPHATEST\n", header_frag_src, scale_frag_src, nil };
 	leedsWorldShader = Shader::create(vs, fs);
 	assert(leedsWorldShader);
 	leedsWorldShader_mobile = Shader::create(vs_mobile, fs);
 	assert(leedsWorldShader_mobile);
+	leedsWorldShader_noAT = Shader::create(vs, fs_noAT);
+	assert(leedsWorldShader_noAT);
+	leedsWorldShader_mobile_noAT = Shader::create(vs_mobile, fs_noAT);
+	assert(leedsWorldShader_mobile_noAT);
 	}
 
 
@@ -511,6 +521,10 @@ DestroyWorldPipe(void)
 	leedsWorldShader = nil;
 	leedsWorldShader_mobile->destroy();
 	leedsWorldShader_mobile = nil;
+	leedsWorldShader_noAT->destroy();
+	leedsWorldShader_noAT = nil;
+	leedsWorldShader_mobile_noAT->destroy();
+	leedsWorldShader_mobile_noAT = nil;
 
 	((rw::gl3::ObjPipeline*)worldPipe)->destroy();
 	worldPipe = nil;
@@ -882,10 +896,11 @@ AtomicFirstPass(RpAtomic *atomic, int pass)
 
 		// alright we're rendering this atomic
 		if(!setupDone){
+			// only opaque meshes get here, so they never need the alpha test
 			if(CustomPipes::WorldPipeSwitch == CustomPipes::WORLDPIPE_MOBILE)
-				CustomPipes::leedsWorldShader_mobile->use();
+				CustomPipes::leedsWorldShader_mobile_noAT->use();
 			else
-				CustomPipes::leedsWorldShader->use();
+				CustomPipes::leedsWorldShader_noAT->use();
 			setWorldMatrix(&building->matrix);
 			setupVertexInput(building->instHeader);
 
